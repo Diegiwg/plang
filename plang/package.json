@@ -1,0 +1,25 @@
+{
+  "name": "plang",
+  "displayName": "plang",
+  "description": ".pasm",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.88.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "plang",
+      "aliases": ["PLang", "plang"],
+      "extensions": [".pasm",".p"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "plang",
+      "scopeName": "souce.p",
+      "path": "./syntaxes/plang.tmLanguage.json"
+    }]
+  }
+}

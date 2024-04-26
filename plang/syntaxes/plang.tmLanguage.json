@@ -1,0 +1,45 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "PLang",
+  "patterns": [
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#values"
+    },
+    {
+      "include": "#strings"
+    }
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.plang",
+          "match": "\\b(push|add|print)\\b"
+        }
+      ]
+    },
+    "values": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.plang",
+          "match": "\\b[0-9]+\\b"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.plang",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.plang",
+          "match": "\\\\."
+        }
+      ]
+    }
+  },
+  "scopeName": "souce.p"
+}
