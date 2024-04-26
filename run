@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = 'nim' ]; then
+    cd vm/nim
+    nim c main.nim
+    echo
+    ./main $2
+else
+    "$@"
+fi
