@@ -109,10 +109,24 @@ type
         name*: string = ""
         values*: seq[Value] = @[]
 
+proc `$`*(s: Stack): string = fmt"{s.values}"
 proc add*(s: Stack, v: Value) = s.values.add(v)
 proc get*(s: Stack, i: int): Value = s.values[i]
 proc pop*(s: Stack): Value = s.values.pop
+proc del*(s: Stack, i: int) = s.values.delete(i)
 proc len*(s: Stack): int = s.values.len
+
+type
+    ProcedureStack* = ref object
+        stack*: Stack = Stack(name: "procedure")
+        returns*: seq[ValueKind] = @[]
+
+proc `$`*(s: ProcedureStack): string = fmt"{s.stack.values}"
+proc add*(s: ProcedureStack, v: Value) = s.stack.values.add(v)
+proc get*(s: ProcedureStack, i: int): Value = s.stack.values[i]
+proc pop*(s: ProcedureStack): Value = s.stack.values.pop
+proc del*(s: ProcedureStack, i: int) = s.stack.values.delete(i)
+proc len*(s: ProcedureStack): int = s.stack.values.len
 
 type
     Machine* = ref object
@@ -123,10 +137,14 @@ type
         labels*: Table[string, int] = initTable[string, int]()
 
         general_stack*: Stack = Stack(name: "general")
-        procedures_stack*: seq[Stack] = @[]
+        procedures_stack*: seq[ProcedureStack] = @[]
         procedures_returns*: seq[int] = @[]
 
         program*: Program = Program()
+
+proc stack*(m: Machine): Stack =
+    if m.procedures_stack.len == 0: m.general_stack
+    else: m.procedures_stack[m.procedures_stack.len - 1].stack
 
 proc log*(m: Machine, loc: int, level: LogLevel, msg: string) =
     let logLevel = case level:
@@ -144,7 +162,7 @@ proc dump*(m: Machine) =
     echo fmt"Labels: {m.labels.len}"
     echo fmt"Stack: {m.general_stack.name}: {m.general_stack.values}"
 
-    let procedures = m.procedures_stack.map(proc(s: Stack): string = fmt"{s.name}: {s.values}")
+    let procedures = m.procedures_stack.map(proc (ps: ProcedureStack): string = fmt"{ps.stack.name}: {ps.stack.values}")
     echo fmt"Procedures Stacks: {procedures}"
 
     let instructions = m.program.instructions
