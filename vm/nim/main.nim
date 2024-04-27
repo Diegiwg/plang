@@ -14,7 +14,7 @@ type
         of VK_Int: i: int
 
     InstructionKind = enum
-        Unknown, Exit, Cast, Dup, Pop, Push, Add, Print, Label, Jump
+        Unknown, Exit, Cast, Dup, Pop, Push, Add, Print, Label, Jump, EqJump, NeqJump, LtJump, GtJump
 
     Instruction = object
         loc: int
@@ -34,7 +34,8 @@ type
         of Label: 
             ip: int
             name: string
-        of Jump:
+        of Jump, EqJump, NeqJump, LtJump, GtJump:
+            name_target: string
             target: int
 
     Machine = ref object
@@ -57,8 +58,8 @@ proc strToValueKind(s: string): ValueKind =
 
 proc strToInstructionKind(s: string): InstructionKind =
     static:
-        if ord(high(InstructionKind)) != 9:
-            echo fmt"ERROR: InstructionKind out of range. Expected {ord(high(InstructionKind)) - 1} but got {ord(high(InstructionKind))}"
+        if ord(high(InstructionKind)) != 13:
+            echo fmt"ERROR: InstructionKind out of range. Current max: {ord(high(InstructionKind))}"
             quit 1
 
     case s:
@@ -72,6 +73,10 @@ proc strToInstructionKind(s: string): InstructionKind =
     of "print": return Print
     of "label": return Label
     of "jump": return Jump
+    of "eqjump": return EqJump
+    of "neqjump": return NeqJump
+    of "ltjump": return LtJump
+    of "gtjump": return GtJump
     else: return Unknown
 
 proc log(m: Machine, loc: int, level: LogLevel, msg: string) =
@@ -134,14 +139,20 @@ proc compile(m: Machine, source: string) =
             try: target = parseInt(parts[1])
             except: discard
 
+            var name: string = ""
             if target == -1:
-                let name = parts[1]
+                name = parts[1]
                 if name == "entry": m.log(lineCount, Log_Error, "Cannot jump to `entry` label")
-
-                if name in m.labels: target = m.labels[name]
-                else: m.log(lineCount, Log_Error, fmt("Label `{name}` not found"))
                 
-            m.program.add(Instruction(loc: lineCount, kind: Jump, target: target))
+            m.program.add(Instruction(loc: lineCount, kind: Jump, name_target: name, target: target))
+        
+        of EqJump, NeqJump, LtJump, GtJump:
+            if parts.len < 2 or parts[1].len == 0: m.log(lineCount, Log_Error, fmt"Missing operand for `{parts[0]}` instruction")
+
+            var name: string = parts[1]
+            if name == "entry": m.log(lineCount, Log_Error, "Cannot jump to `entry` label")
+            
+            m.program.add(Instruction(loc: lineCount, kind: cmd, name_target: name, target: -1))
 
         of Pop:
             m.program.add(Instruction(loc: lineCount, kind: Pop))
@@ -215,9 +226,91 @@ proc run(m: Machine) =
         of Label: discard
 
         of Jump:
-            if instruction.target == -1: m.log(instruction.loc, Log_Error, "Trying to jump to invalid label")
-            m.ip = instruction.target
+            if instruction.target != -1: 
+                m.ip = instruction.target
+                continue
 
+            let name = instruction.name_target
+            if name == "" and name notin m.labels: m.log(instruction.loc, Log_Error, fmt"Label `{name}` not found")
+
+            m.ip = m.labels[name]
+
+        of EqJump:
+            let name = instruction.name_target
+            if name == "" and name notin m.labels: m.log(instruction.loc, Log_Error, fmt"Label `{name}` not found")
+
+            if m.stack.len < 2: m.log(instruction.loc, Log_Error, "Not enough values on stack for `eqjump` operation")
+            let b = m.stack.pop
+            let a = m.stack.pop
+
+            if a.kind != b.kind: m.log(instruction.loc, Log_Error, fmt"Incompatible types for `eqjump` operation. Try to compare `{b.kind}` with `{a.kind}`")
+
+            var goto = false
+            case a.kind:
+            of VK_Void: m.log(instruction.loc, Log_Error, fmt"Comparing `{VK_Void}` is not allowed")
+            of VK_Int: goto = if a.i == b.i: true else: false
+            of VK_String: goto = if a.s == b.s: true else: false
+            
+            m.stack.add(a)
+            if goto: m.ip = m.labels[name]
+        
+        of NeqJump:
+            let name = instruction.name_target
+            if name == "" and name notin m.labels: m.log(instruction.loc, Log_Error, fmt"Label `{name}` not found")
+
+            if m.stack.len < 2: m.log(instruction.loc, Log_Error, "Not enough values on stack for `neqjump` operation")
+            let b = m.stack.pop
+            let a = m.stack.pop
+
+            if a.kind != b.kind: m.log(instruction.loc, Log_Error, fmt"Incompatible types for `neqjump` operation. Try to compare `{b.kind}` with `{a.kind}`")
+
+            var goto = false
+            case a.kind:
+            of VK_Void: m.log(instruction.loc, Log_Error, fmt"Comparing `{VK_Void}` is not allowed")
+            of VK_Int: goto = if a.i != b.i: true else: false
+            of VK_String: goto = if a.s != b.s: true else: false
+            
+            m.stack.add(a)
+            if goto: m.ip = m.labels[name]
+
+        of GtJump:
+            let name = instruction.name_target
+            if name == "" and name notin m.labels: m.log(instruction.loc, Log_Error, fmt"Label `{name}` not found")
+
+            if m.stack.len < 2: m.log(instruction.loc, Log_Error, "Not enough values on stack for `gtjump` operation")
+            let b = m.stack.pop
+            let a = m.stack.pop
+
+            if a.kind != b.kind: m.log(instruction.loc, Log_Error, fmt"Incompatible types for `gtjump` operation. Try to compare `{b.kind}` with `{a.kind}`")
+            
+            var goto = false
+            case a.kind:
+            of VK_Void: m.log(instruction.loc, Log_Error, fmt"Comparing `{VK_Void}` is not allowed")
+            of VK_Int: goto = if a.i > b.i: true else: false
+            of VK_String: goto = if a.s > b.s: true else: false
+            
+            m.stack.add(a)
+            if goto: m.ip = m.labels[name]
+
+        of LtJump:
+            let name = instruction.name_target
+            if name == "" and name notin m.labels: m.log(instruction.loc, Log_Error, fmt"Label `{name}` not found")
+
+            if m.stack.len < 2: m.log(instruction.loc, Log_Error, "Not enough values on stack for `ltjump` operation")
+            let b = m.stack.pop
+            let a = m.stack.pop
+
+            if a.kind != b.kind: m.log(instruction.loc, Log_Error, fmt"Incompatible types for `ltjump` operation. Try to compare `{b.kind}` with `{a.kind}`")
+
+            var goto = false
+            case a.kind:
+            of VK_Void: m.log(instruction.loc, Log_Error, fmt"Comparing `{VK_Void}` is not allowed")
+            of VK_Int: goto = if a.i < b.i: true else: false
+            of VK_String: goto = if a.s < b.s: true else: false
+            
+            m.stack.add(a)
+            if goto: m.ip = m.labels[name]
+                
         of Print:
             if m.stack.len == 0: m.log(instruction.loc, Log_Error, "No value on stack to print")
             let value = m.stack.pop()
