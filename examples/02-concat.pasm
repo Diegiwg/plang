@@ -1,9 +1,9 @@
 label entry
-push "Hello "
-push "From "
-add
+    push "Hello "
+    push "From "
+    add
 
-push "`PLang`"
-add
+    push "`PLang`"
+    add
 
-print
+    print

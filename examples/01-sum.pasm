@@ -1,6 +1,6 @@
 label entry
-push 1
-push 1
-add
+    push 1
+    push 1
+    add
 
-print
+    print
