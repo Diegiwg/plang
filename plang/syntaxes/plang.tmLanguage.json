@@ -9,6 +9,9 @@
       "include": "#values"
     },
     {
+      "include": "#types"
+    },
+    {
       "include": "#strings"
     }
   ],
@@ -17,7 +20,7 @@
       "patterns": [
         {
           "name": "keyword.control.plang",
-          "match": "\\b(pop|push|add|print)\\b"
+          "match": "\\b(pop|push|add|print|cast|dup)\\b"
         }
       ]
     },
@@ -26,6 +29,14 @@
         {
           "name": "constant.character.plang",
           "match": "\\b[0-9]+\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "support.type.plang",
+          "match": "\\b(int|string)\\b"
         }
       ]
     },
