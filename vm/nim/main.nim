@@ -1,4 +1,5 @@
 import os
+import sequtils
 import strutils
 import strformat
 import tables
@@ -346,6 +347,10 @@ proc run(m: Machine) =
             m.log(instruction.loc, Log_Error, fmt("Unknown instruction"))
 
         inc m.ip
+
+    if m.stack.len > 0:
+        let values = m.stack.map(proc (v: Value): string = fmt"{v.kind}({v.i})").join(", ")
+        m.log(0, Log_Error, fmt"Stack is not empty at end of program: {m.stack.len} value(s) on stack. Values: {values}")
 
 when isMainModule:
     let argv = commandLineParams()
