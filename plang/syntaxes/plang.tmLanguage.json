@@ -27,7 +27,7 @@
     },
     {
       "name": "keyword.control.plang",
-      "begin": "jump ",
+      "begin": "eqjump|neqjump|ltjump|gtjump|jump ",
       "end": "\\n",
       "patterns": [
         {
