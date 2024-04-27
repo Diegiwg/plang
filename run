@@ -16,26 +16,13 @@ elif [ "$1" = 'nim' ]; then
 elif [ "$1" = 'nim-test' ]; then
     cd vm/nim
     nim c main.nim
+    cd ../../
 
-    echo
-    echo "Running: Sum Example"
-    ./main ../../examples/01-sum.pasm
-
-    echo
-    echo "Runnig: Concat Example"
-    ./main ../../examples/02-concat.pasm
-
-    echo
-    echo "Running: Cast Example"
-    ./main ../../examples/03-cast.pasm
-
-    echo
-    echo "Running: Jump Example"
-    ./main ../../examples/04-jump.pasm
-
-    echo
-    echo "Running: Eq Jump Example"
-    ./main ../../examples/05-eqjump.pasm
+    for file in examples/*; do
+        echo
+        echo "Testing $file"
+        ./vm/nim/main $file
+    done
     
 else
     "$@"

@@ -1,4 +1,3 @@
-import sequtils
 import strformat
 import strutils
 import tables
@@ -9,27 +8,35 @@ proc execute*(m: Machine) =
     while m.ip < len(m.program.instructions):
         let instruction = m.program.instructions[m.ip]
 
-        m.trace(instruction)
+        # m.trace(instruction)
 
         case instruction.kind:
         of Proc:
             m.procedures_stack.add(ProcedureStack())
 
         of ProcArgs:
-            if m.procedures_stack.len == 0: m.log(instruction.loc, Log_Error, "EXECUTE: No procedure in execution")
+            if m.procedures_stack.len == 0: m.log(instruction.loc, Log_Error, "EXECUTE: Not inside a procedure")
+            var procedure_stack = m.procedures_stack.pop
 
-            var procedure_stack = m.procedures_stack[m.procedures_stack.len - 1]
-            if instruction.args_count > 0 and m.general_stack.len < instruction.args_count: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Is expected {instruction.args_types} on stack for return from this procedure, got {m.general_stack}") # TODO: Add proc name in error message
+            if instruction.args_count > 0 and m.stack.len < instruction.args_count:
+                m.log(instruction.loc, Log_Error, 
+                fmt"EXECUTE: Is expected {instruction.args_types} arguments from this procedure, got {m.stack}"
+                )
 
             for arg in 0..<instruction.args_count:
-                let stack_offset = m.general_stack.len - instruction.args_count
-                let value = m.general_stack.get(stack_offset + arg)
-                m.general_stack.del(stack_offset + arg)
+                let stack_offset = m.stack.len - instruction.args_count
+                let value = m.stack.get(stack_offset + arg)
+                m.stack.del(stack_offset + arg)
+
+                if value.kind != instruction.args_types[arg]:
+                    m.log(instruction.loc, Log_Error, fmt"EXECUTE: Incompatible types for procedure argument. Expected `{instruction.args_types[arg]}`, got `{value.kind}`")
 
                 procedure_stack.add(value)
 
+            m.procedures_stack.add(procedure_stack)
+
         of ProcReturnArgs:
-            if m.procedures_stack.len == 0: m.log(instruction.loc, Log_Error, "EXECUTE: No procedure in execution")
+            if m.procedures_stack.len == 0: m.log(instruction.loc, Log_Error, "EXECUTE: Not inside a procedure")
             m.procedures_stack[m.procedures_stack.len - 1].returns = instruction.args_types
 
         of Call:
@@ -39,22 +46,20 @@ proc execute*(m: Machine) =
             m.ip = (m.procs[instruction.proc_name]) - 1
         
         of ProcReturn:
-            if m.procedures_stack.len == 0: m.log(instruction.loc, Log_Error, "EXECUTE: No procedure in execution")
-            var stack = m.procedures_stack.pop
+            if m.procedures_stack.len == 0: m.log(instruction.loc, Log_Error, "EXECUTE: Not inside a procedure")
+            var procedure_stack = m.procedures_stack.pop
 
-            if stack.returns.len > stack.len: m.log(instruction.loc, Log_Error, 
-            fmt"EXECUTE: Is expected {stack.returns.len}` on stack for return from this procedure, got {stack.len}")
+            if procedure_stack.len < procedure_stack.returns.len or (procedure_stack.len - procedure_stack.returns.len) != 0:
+                m.log(instruction.loc, Log_Error, fmt"EXECUTE: Is expected {procedure_stack.returns} return values from this procedure, got {procedure_stack}")
 
-            for arg in 0..<stack.returns.len:
-                let stack_offset = stack.len - stack.returns.len
-                let value = stack.get(stack_offset + arg)
-                stack.del(stack_offset + arg)
-                m.general_stack.add(value)
-
-            if stack.len > 0: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Is expected `{stack.returns}` values on stack for return from this procedure, got `{stack}`")
+            for arg in 0..<procedure_stack.returns.len:
+                let stack_offset = procedure_stack.len - procedure_stack.returns.len
+                let value = procedure_stack.get(stack_offset + arg)
+                procedure_stack.del(stack_offset + arg)
+                m.stack.add(value)
 
             m.ip = m.procedures_returns.pop
-            
+
         of Cast:
             if m.stack.len == 0: m.log(instruction.loc, Log_Error, "EXECUTE: No value on stack to cast")
 
