@@ -23,9 +23,6 @@ proc calc
     add
     print
     pop
-
-    call println
-
     return
 
 label entry

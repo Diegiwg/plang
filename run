@@ -15,14 +15,15 @@ elif [ "$1" = 'nim' ]; then
 
 elif [ "$1" = 'nim-test' ]; then
     cd vm/nim
-    nim c main.nim
+    nim c -d:release main.nim
     cd ../../
 
     for file in examples/*; do
-        echo
+        echo "---------------------------------"
         echo "Testing $file"
         ./vm/nim/main $file
     done
+    echo "---------------------------------"
     
 else
     "$@"
