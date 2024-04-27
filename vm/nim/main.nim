@@ -29,7 +29,7 @@ when isMainModule:
         quit 1
 
     var m = Machine()
-    m.programName = sourcePath
+    m.program.name = sourcePath
 
     m.compile(source)
     m.execute()
