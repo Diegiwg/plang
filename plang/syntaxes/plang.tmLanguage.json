@@ -17,14 +17,14 @@
       "patterns": [
         {
           "name": "keyword.control.plang",
-          "match": "\\b(push|add|print)\\b"
+          "match": "\\b(pop|push|add|print)\\b"
         }
       ]
     },
     "values": {
       "patterns": [
         {
-          "name": "string.quoted.double.plang",
+          "name": "constant.character.plang",
           "match": "\\b[0-9]+\\b"
         }
       ]

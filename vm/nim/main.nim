@@ -2,68 +2,99 @@ import os
 import strutils
 
 type
-    Value = int
+  ValueKind = enum 
+    VK_Void, VK_String, VK_Int
 
-    Instruction = object
-        operand: Value
+  Value = object
+    case kind: ValueKind  
+    of VK_Void: v: void
+    of VK_String: s: string
+    of VK_Int: i: int
 
-    Machine = ref object
-        ip: int = 0
-        stack: seq[Instruction] = @[]
+  InstructionKind = enum
+    Pop, Push, Add, Print, Label
 
-proc compileAndRun(m: Machine, asmFilePath: string) =
-    let content: string = readFile(asmFilePath)
-    let lines: seq[string] = content.split('\n')
+  Instruction = object
+    case kind: InstructionKind
+    of Pop: discard
+    of Push: operand: Value
+    of Add: discard
+    of Print: discard
+    of Label: loc: int
 
-    for line in lines:
-        if len(line) == 0:
-            continue
+  Machine = ref object
+    program: seq[Instruction] = @[]
+    stack: seq[Value] = @[]
+    ip: int = 0
 
-        var parts: seq[string] = line.split(' ')
+proc compile(m: Machine, source: string) =
+    var instructionCount = 0
+    for line in source.splitLines():
+        if line.len == 0: continue
 
-        if len(parts) == 0:
-            continue
+        let parts = line.splitWhitespace()
+        if parts.len == 0: continue
 
         case parts[0]:
-            of "pop":
-                if len(m.stack) == 0:
-                    echo "Stack underflow"
-                    quit(1)
-                
-                m.stack.delete(m.stack.high)
+        of "label":
+            m.program.add(Instruction(kind: Label, loc: instructionCount))
+        of "pop":
+            m.program.add(Instruction(kind: Pop))
+        of "push":
+            m.program.add(Instruction(kind: Push, operand: Value(kind: VK_Int, i: parseInt(parts[1]))))
+        of "add":
+            m.program.add(Instruction(kind: Add))
+        of "print":
+            m.program.add(Instruction(kind: Print))
+        else:
+            echo "Unknown instruction '", parts[0], "' on line ", line
+            continue
 
-            of "push":
-                m.stack.add(Instruction(operand: parseInt(parts[1])))
+        inc instructionCount
 
-            of "add":
-                if len(m.stack) < 2:
-                    echo "Stack underflow"
-                    quit(1)
+proc run(m: Machine) =
+    while m.ip < len(m.program):
+        let instruction = m.program[m.ip]
 
-                let
-                    a = m.stack[m.stack.high - 1]
-                    b = m.stack[m.stack.high]
+        case instruction.kind:
+        of Label: discard
 
-                m.stack[m.stack.high - 1] = Instruction(operand: a.operand + b.operand)
-                m.stack.delete(m.stack.high)
+        of Print:
+            if m.stack.len == 0:
+                echo "ERROR: Stack underflow"
+                quit 1
+            
+            let value = m.stack.pop()
+            case value.kind:
+            of VK_Void: echo "void"
+            of VK_String: echo value.s
+            of VK_Int: echo value.i
 
-            of "print":
-                if len(m.stack) == 0:
-                    echo "Stack underflow"
-                    quit(1)
-                
-                echo m.stack[m.stack.high].operand
-                m.stack.delete(m.stack.high)
+        of Pop:
+            if m.stack.len == 0:
+                echo "ERROR: Stack underflow"
+                quit 1
+            
+            discard m.stack.pop()
 
-            else:
-                echo "Unknown instruction: " & parts[0]
-                quit(1)
-        
-        inc(m.ip)
+        of Push:
+            m.stack.add(instruction.operand)
 
-    if len(m.stack) > 0:
-        echo "Data remaining on stack"
-        quit(1)
+        of Add:
+            if m.stack.len < 2:
+                echo "ERROR: Stack underflow"
+                quit 1
+            
+            let a = m.stack.pop()
+            let b = m.stack.pop()
+
+            if a.kind != b.kind:
+                echo "ERROR: Incompatible types for + operation"
+                quit 1
+
+            m.stack.add(Value(kind: VK_Int, i: a.i + b.i))
+
+        inc m.ip
 
 when isMainModule:
     let argv = commandLineParams()
@@ -71,6 +102,17 @@ when isMainModule:
     if len(argv) == 0:
         echo "Missing file path"
         quit(1)
+    
+    if not fileExists(argv[0]):
+        echo "File not found: ", argv[0]
+        quit(1)
+
+    let source: string = readFile(argv[0])
+    if source.len == 0:
+        echo "File is empty: ", argv[0]
+        quit(1)
 
     var m = Machine()
-    m.compileAndRun(argv[0])
+
+    m.compile(source)
+    m.run()
