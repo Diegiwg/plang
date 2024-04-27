@@ -20,8 +20,23 @@
       "end": "\\n",
       "patterns": [
         {
-          "name": "invalid.deprecated",
+          "name": "support.type.property-name.css.plang",
           "match": "\\b\\w+\\b"
+        }
+      ]
+    },
+    {
+      "name": "keyword.control.plang",
+      "begin": "jump ",
+      "end": "\\n",
+      "patterns": [
+        {
+          "name": "constant.character.plang",
+          "match": "\\b[0-9]+\\b"
+        },
+        {
+          "name": "support.type.property-name.css.plang",
+          "match":  "\\b\\w+\\b"
         }
       ]
     }
@@ -31,7 +46,7 @@
       "patterns": [
         {
           "name": "keyword.control.plang",
-          "match": "\\b(pop|push|add|print|cast|dup)\\b"
+          "match": "\\b(exit|pop|push|add|print|cast|dup)\\b"
         }
       ]
     },
