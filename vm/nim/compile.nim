@@ -119,9 +119,6 @@ proc compile*(m: Machine, source: string) =
             
             m.program.instructions.add(Instruction(loc: lineCount, kind: cmd, name_target: name, target: -1))
 
-        of Pop:
-            m.program.instructions.add(Instruction(loc: lineCount, kind: Pop))
-
         of Push:
             if parts.len < 2 or parts[1].len == 0: m.log(lineCount, Log_Error, "COMPILE: Missing operand for `push` instruction")
 
@@ -140,11 +137,8 @@ proc compile*(m: Machine, source: string) =
 
             m.program.instructions.add(Instruction(loc: lineCount, kind: Push, operand: value))
 
-        of Add:
-            m.program.instructions.add(Instruction(loc: lineCount, kind: Add))
-
-        of Print:
-            m.program.instructions.add(Instruction(loc: lineCount, kind: Print))
+        of Add, Sub, Mul, Div, Mod, Print, Pop:
+            m.program.instructions.add(Instruction(loc: lineCount, kind: cmd))
 
         of Exit:
             if parts.len < 2 or parts[1].len == 0: m.log(lineCount, Log_Error, "COMPILE: Missing operand for `exit` instruction")

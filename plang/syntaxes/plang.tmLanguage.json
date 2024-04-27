@@ -23,7 +23,7 @@
       "patterns": [
         {
           "name": "keyword.control.plang",
-          "match": "\\b(proc|label|eqjump|neqjump|ltjump|gtjump|jump|call|exit|pop|push|add|print|cast|dup|return)\\b"
+          "match": "\\b(proc|label|eqjump|neqjump|ltjump|gtjump|jump|call|exit|pop|push|add|sub|mul|div|mod|print|cast|dup|return)\\b"
         }
       ]
     },

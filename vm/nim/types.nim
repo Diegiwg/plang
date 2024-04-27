@@ -31,7 +31,7 @@ type
         Cast, 
         Dup,
         Pop, Push,
-        Add,
+        Add, Sub, Mul, Div, Mod,
         Print,
         Label, Jump, EqJump, NeqJump, LtJump, GtJump,
         Call, Proc, ProcReturn, ProcArgs, ProcReturnArgs,
@@ -47,6 +47,10 @@ proc instructionKindFromString*(s: string): InstructionKind =
     of "push": return Push
     
     of "add": return Add
+    of "sub": return Sub
+    of "mul": return Mul
+    of "div": return Div
+    of "mod": return Mod
     
     of "print": return Print
     
@@ -92,7 +96,7 @@ type
             target*: int
         of Exit:
             exit_code*: int
-        of Unknown, Pop, Add, Print:
+        of Unknown, Pop, Print, Add, Sub, Mul, Div, Mod:
             discard
 
 type

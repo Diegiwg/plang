@@ -61,23 +61,23 @@ proc execute*(m: Machine) =
             m.ip = m.procedures_returns.pop
 
         of Cast:
-            if m.stack.len == 0: m.log(instruction.loc, Log_Error, "EXECUTE: No value on stack to cast")
+            if m.stack.len == 0: m.log(instruction.loc, Log_Error, fmt"EXECUTE: No value on stack to cast")
 
             let value = m.stack.pop()
             case value.kind:
-            of VK_Void: m.log(instruction.loc, Log_Error, "EXECUTE: Casting `{VK_Void}` is not allowed")
+            of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Casting is not allowed for `{VK_Void}`")
             of VK_Int:
                 case instruction.type_target:
-                of VK_Void: m.log(instruction.loc, Log_Error, "EXECUTE: Casting `{VK_Void}` is not allowed")
-                of VK_Int: m.log(instruction.loc, Log_Warning, "EXECUTE: Casting `{VK_Int}` to `{VK_Int}` does nothing")
+                of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Casting is not allowed for `{VK_Void}`")
+                of VK_Int: m.log(instruction.loc, Log_Warning, fmt"EXECUTE: Casting `{VK_Int}` to `{VK_Int}` does nothing")
                 of VK_String: m.stack.add(Value(kind: VK_String, s: $value.i))
             of VK_String:
                 case instruction.type_target:
-                of VK_Void: m.log(instruction.loc, Log_Error, "EXECUTE: Casting `{VK_Void}` is not allowed")
-                of VK_String: m.log(instruction.loc, Log_Warning, "EXECUTE: Casting `{VK_String}` to `{VK_String}` does nothing")
+                of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Casting is not allowed for `{VK_Void}`")
+                of VK_String: m.log(instruction.loc, Log_Warning, fmt"EXECUTE: Casting `{VK_String}` to `{VK_String}` does nothing")
                 of VK_Int:
                     try: m.stack.add(Value(kind: VK_Int, i: parseInt(value.s)))
-                    except: m.log(instruction.loc, Log_Error, "EXECUTE: Casting `{VK_String}: {value.s}` to `{VK_Int}` failed")
+                    except: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Casting `{VK_String}: {value.s}` to `{VK_Int}` failed")
 
         of Dup:
             let target = m.stack.len - instruction.value_target - 1
@@ -108,7 +108,7 @@ proc execute*(m: Machine) =
 
             var goto = false
             case a.kind:
-            of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparing `{VK_Void}` is not allowed")
+            of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparing is not allowed for `{VK_Void}`")
             of VK_Int: goto = if a.i == b.i: true else: false
             of VK_String: goto = if a.s == b.s: true else: false
             
@@ -127,7 +127,7 @@ proc execute*(m: Machine) =
 
             var goto = false
             case a.kind:
-            of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparing `{VK_Void}` is not allowed")
+            of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparing is not allowed for `{VK_Void}`")
             of VK_Int: goto = if a.i != b.i: true else: false
             of VK_String: goto = if a.s != b.s: true else: false
             
@@ -146,7 +146,7 @@ proc execute*(m: Machine) =
             
             var goto = false
             case a.kind:
-            of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparing `{VK_Void}` is not allowed")
+            of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparing is not allowed for `{VK_Void}`")
             of VK_Int: goto = if a.i > b.i: true else: false
             of VK_String: goto = if a.s > b.s: true else: false
             
@@ -165,7 +165,7 @@ proc execute*(m: Machine) =
 
             var goto = false
             case a.kind:
-            of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparing `{VK_Void}` is not allowed")
+            of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparing is not allowed for `{VK_Void}`")
             of VK_Int: goto = if a.i < b.i: true else: false
             of VK_String: goto = if a.s < b.s: true else: false
             
@@ -198,8 +198,64 @@ proc execute*(m: Machine) =
             case a.kind:
             of VK_Int: m.stack.add(Value(kind: VK_Int, i: a.i + b.i))
             of VK_String: m.stack.add(Value(kind: VK_String, s: a.s & b.s))
-            of VK_Void: discard
+            of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Addition is not allowed for `{VK_Void}`")
         
+        of Sub:
+            if m.stack.len < 2: m.log(instruction.loc, Log_Error, "EXECUTE: Not enough values on stack for `sub` operation")
+
+            let b = m.stack.pop
+            let a = m.stack.pop
+
+            if a.kind != b.kind: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Incompatible types for `sub` operation. Try to subtract `{b.kind}` from `{a.kind}`")
+
+            case a.kind:
+            of VK_Int: m.stack.add(Value(kind: VK_Int, i: a.i - b.i))
+            of VK_String: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Subtraction is not allowed for `{VK_String}`")
+            of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Subtraction is not allowed for `{VK_Void}`")
+
+        of Mul:
+            if m.stack.len < 2: m.log(instruction.loc, Log_Error, "EXECUTE: Not enough values on stack for `mul` operation")
+
+            let b = m.stack.pop
+            let a = m.stack.pop
+
+            if a.kind != b.kind: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Incompatible types for `mul` operation. Try to multiply `{b.kind}` with `{a.kind}`")
+
+            case a.kind:
+            of VK_Int: m.stack.add(Value(kind: VK_Int, i: a.i * b.i))
+            of VK_String: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Multiplication is not allowed for `{VK_String}`")
+            of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Multiplication is not allowed for `{VK_Void}`")
+        
+        of Div:
+            if m.stack.len < 2: m.log(instruction.loc, Log_Error, "EXECUTE: Not enough values on stack for `div` operation")
+
+            let b = m.stack.pop
+            let a = m.stack.pop
+
+            if a.kind != b.kind: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Incompatible types for `div` operation. Try to divide `{b.kind}` by `{a.kind}`")
+
+            if b.i == 0: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Division by zero")
+
+            case a.kind:
+            of VK_Int: m.stack.add(Value(kind: VK_Int, i: a.i div b.i))
+            of VK_String: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Division is not allowed for `{VK_String}`")
+            of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Division is not allowed for `{VK_Void}`")
+
+        of Mod:
+            if m.stack.len < 2: m.log(instruction.loc, Log_Error, "EXECUTE: Not enough values on stack for `mod` operation")
+
+            let b = m.stack.pop
+            let a = m.stack.pop
+
+            if a.kind != b.kind: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Incompatible types for `mod` operation. Try to divide `{b.kind}` by `{a.kind}`")
+
+            if b.i == 0: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Division by zero")
+
+            case a.kind:
+            of VK_Int: m.stack.add(Value(kind: VK_Int, i: a.i mod b.i))
+            of VK_String: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Modulo is not allowed for `{VK_String}`")
+            of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Modulo is not allowed for `{VK_Void}`")
+
         of Exit:
             quit instruction.exit_code
 
