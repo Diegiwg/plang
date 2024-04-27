@@ -1,6 +1,7 @@
 import os
 import strutils
 import strformat
+import tables
 
 type
     ValueKind = enum 
@@ -19,19 +20,26 @@ type
         loc: int
         case kind: InstructionKind
         of Unknown: discard
-        of Cast: type_target: ValueKind
-        of Dup: value_target: int
+        of Cast:
+            type_target: ValueKind
+        of Dup: 
+            value_target: int
         of Pop: discard
-        of Push: operand: Value
+        of Push:
+            operand: Value
         of Add: discard
         of Print: discard
-        of Label: ip: int
+        of Label: 
+            ip: int
+            name: string
 
     Machine = ref object
         programName: string
         program: seq[Instruction] = @[]
         stack: seq[Value] = @[]
         ip: int = 0
+        entry: int = -1
+        labels = initTable[string, int]()
 
     LogLevel = enum
         Log_Info, Log_Warning, Log_Error
@@ -102,7 +110,16 @@ proc compile(m: Machine, source: string) =
             m.program.add(Instruction(loc: lineCount, kind: Dup, value_target: target))
 
         of Label:
-            m.program.add(Instruction(loc: lineCount, kind: Label, ip: instructionCount))
+            let name = parts[1]
+            if parts.len < 2 or parts[1].len == 0: m.log(lineCount, Log_Error, "Missing operand for `label` instruction")
+            if name in m.labels: m.log(lineCount, Log_Error, fmt("Duplicate label `{name}`"))
+
+            if name == "entry":
+                if m.entry != -1: m.log(lineCount, Log_Error, "Duplicate `entry` label")
+                m.entry = instructionCount
+            
+            m.labels[name] = instructionCount
+            m.program.add(Instruction(loc: lineCount, kind: Label, ip: instructionCount, name: name))
 
         of Pop:
             m.program.add(Instruction(loc: lineCount, kind: Pop))
@@ -135,6 +152,9 @@ proc compile(m: Machine, source: string) =
             m.log(lineCount, Log_Error, fmt("Unknown instruction `{cmd}` skipped"))
 
         inc instructionCount
+    
+    if m.entry == -1: m.log(0, Log_Error, "No `entry` label found")
+    m.ip = m.labels["entry"]
 
 proc run(m: Machine) =
     while m.ip < len(m.program):
