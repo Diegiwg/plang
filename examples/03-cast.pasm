@@ -10,3 +10,4 @@ label entry
     add
 
     print
+    pop

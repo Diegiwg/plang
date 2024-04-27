@@ -1,5 +1,5 @@
 label finish
-    exit 1
+    exit 0
 
 push "Jumping to `finish`"
 print
@@ -8,7 +8,7 @@ jump finish
 label hello
     push "Hello, World!"
     print
-    jump 1
+    jump 2
 
 label entry
     push "Jumping to `hello`"

@@ -23,6 +23,14 @@ elif [ "$1" = 'nim-test' ]; then
     echo
     echo "Running: Cast Example"
     ./main ../../examples/03-cast.pasm
+
+    echo
+    echo "Running: Jump Example"
+    ./main ../../examples/04-jump.pasm
+
+    echo
+    echo "Running: Eq Jump Example"
+    ./main ../../examples/05-eqjump.pasm
 else
     "$@"
 fi
