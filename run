@@ -5,8 +5,24 @@ set -e
 if [ "$1" = 'nim' ]; then
     cd vm/nim
     nim c main.nim
+
     echo
     ./main $2
+elif [ "$1" = 'nim-test' ]; then
+    cd vm/nim
+    nim c main.nim
+
+    echo
+    echo "Running: Sum Example"
+    ./main ../../examples/01-sum.pasm
+
+    echo
+    echo "Runnig: Concat Example"
+    ./main ../../examples/02-concat.pasm
+
+    echo
+    echo "Running: Cast Example"
+    ./main ../../examples/03-cast.pasm
 else
     "$@"
 fi
