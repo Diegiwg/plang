@@ -2,12 +2,17 @@
 
 set -e
 
-if [ "$1" = 'nim' ]; then
+if [ "$1" = 'vscode-install-extension' ]; then
+    rm -rf ~/.vscode/extensions/plang
+    cp -r plang ~/.vscode/extensions/plang
+
+elif [ "$1" = 'nim' ]; then
     cd vm/nim
     nim c main.nim
 
     echo
     ./main $2
+
 elif [ "$1" = 'nim-test' ]; then
     cd vm/nim
     nim c main.nim
@@ -31,6 +36,7 @@ elif [ "$1" = 'nim-test' ]; then
     echo
     echo "Running: Eq Jump Example"
     ./main ../../examples/05-eqjump.pasm
+    
 else
     "$@"
 fi

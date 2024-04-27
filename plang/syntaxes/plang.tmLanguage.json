@@ -15,30 +15,7 @@
       "include": "#strings"
     },
     {
-      "name": "keyword.control.plang",
-      "begin": "proc|label ",
-      "end": "\\n",
-      "patterns": [
-        {
-          "name": "support.type.property-name.css.plang",
-          "match": "\\b\\w+\\b"
-        }
-      ]
-    },
-    {
-      "name": "keyword.control.plang",
-      "begin": "eqjump|neqjump|ltjump|gtjump|jump ",
-      "end": "\\n",
-      "patterns": [
-        {
-          "name": "constant.character.plang",
-          "match": "\\b[0-9]+\\b"
-        },
-        {
-          "name": "support.type.property-name.css.plang",
-          "match":  "\\b\\w+\\b"
-        }
-      ]
+      "include": "#text"
     }
   ],
   "repository": {
@@ -46,7 +23,7 @@
       "patterns": [
         {
           "name": "keyword.control.plang",
-          "match": "\\b(call|exit|pop|push|add|print|cast|dup|return)\\b"
+          "match": "\\b(proc|label|eqjump|neqjump|ltjump|gtjump|jump|call|exit|pop|push|add|print|cast|dup|return)\\b"
         }
       ]
     },
@@ -55,6 +32,14 @@
         {
           "name": "constant.character.plang",
           "match": "\\b[0-9]+\\b"
+        }
+      ]
+    },
+    "text": {
+      "patterns": [
+        {
+          "name": "comment.line.double-dash",
+          "match": "\\b\\w+\\b"
         }
       ]
     },
