@@ -35,7 +35,7 @@ The PLang language is designed to be simple, allowing for the creation of custom
 
 A simple PLang program might look like this:
 
-```plaintext
+```asm
 label entry
     push 5
     push 10
