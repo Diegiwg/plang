@@ -14,12 +14,14 @@ type
         of VK_Int: i: int
 
     InstructionKind = enum
-        Unknown, Cast, Dup, Pop, Push, Add, Print, Label
+        Unknown, Exit, Cast, Dup, Pop, Push, Add, Print, Label, Jump
 
     Instruction = object
         loc: int
         case kind: InstructionKind
         of Unknown: discard
+        of Exit:
+            exit_code: int
         of Cast:
             type_target: ValueKind
         of Dup: 
@@ -32,6 +34,8 @@ type
         of Label: 
             ip: int
             name: string
+        of Jump:
+            target: int
 
     Machine = ref object
         programName: string
@@ -53,12 +57,13 @@ proc strToValueKind(s: string): ValueKind =
 
 proc strToInstructionKind(s: string): InstructionKind =
     static:
-        if ord(high(InstructionKind)) + 1 != 8:
-            echo "ERROR: InstructionKind out of range"
+        if ord(high(InstructionKind)) != 9:
+            echo fmt"ERROR: InstructionKind out of range. Expected {ord(high(InstructionKind)) - 1} but got {ord(high(InstructionKind))}"
             quit 1
 
     case s:
     of "unknown": return Unknown
+    of "exit": return Exit
     of "cast": return Cast
     of "dup": return Dup
     of "pop": return Pop
@@ -66,6 +71,7 @@ proc strToInstructionKind(s: string): InstructionKind =
     of "add": return Add
     of "print": return Print
     of "label": return Label
+    of "jump": return Jump
     else: return Unknown
 
 proc log(m: Machine, loc: int, level: LogLevel, msg: string) =
@@ -121,6 +127,22 @@ proc compile(m: Machine, source: string) =
             m.labels[name] = instructionCount
             m.program.add(Instruction(loc: lineCount, kind: Label, ip: instructionCount, name: name))
 
+        of Jump:
+            if parts.len < 2 or parts[1].len == 0: m.log(lineCount, Log_Error, "Missing operand for `jump` instruction")
+
+            var target: int = -1
+            try: target = parseInt(parts[1])
+            except: discard
+
+            if target == -1:
+                let name = parts[1]
+                if name == "entry": m.log(lineCount, Log_Error, "Cannot jump to `entry` label")
+
+                if name in m.labels: target = m.labels[name]
+                else: m.log(lineCount, Log_Error, fmt("Label `{name}` not found"))
+                
+            m.program.add(Instruction(loc: lineCount, kind: Jump, target: target))
+
         of Pop:
             m.program.add(Instruction(loc: lineCount, kind: Pop))
 
@@ -147,6 +169,11 @@ proc compile(m: Machine, source: string) =
 
         of Print:
             m.program.add(Instruction(loc: lineCount, kind: Print))
+
+        of Exit:
+            if parts.len < 2 or parts[1].len == 0: m.log(lineCount, Log_Error, "Missing operand for `exit` instruction")
+            try: m.program.add(Instruction(loc: lineCount, kind: Exit, exit_code: parseInt(parts[1])))
+            except: m.log(lineCount, Log_Error, "Invalid operand for `exit` instruction")
 
         of Unknown:
             m.log(lineCount, Log_Error, fmt("Unknown instruction `{cmd}` skipped"))
@@ -187,6 +214,10 @@ proc run(m: Machine) =
 
         of Label: discard
 
+        of Jump:
+            if instruction.target == -1: m.log(instruction.loc, Log_Error, "Trying to jump to invalid label")
+            m.ip = instruction.target
+
         of Print:
             if m.stack.len == 0: m.log(instruction.loc, Log_Error, "No value on stack to print")
             let value = m.stack.pop()
@@ -215,6 +246,9 @@ proc run(m: Machine) =
             of VK_String: m.stack.add(Value(kind: VK_String, s: a.s & b.s))
             of VK_Void: discard
         
+        of Exit:
+            quit instruction.exit_code
+
         of Unknown:
             m.log(instruction.loc, Log_Error, fmt("Unknown instruction"))
 
