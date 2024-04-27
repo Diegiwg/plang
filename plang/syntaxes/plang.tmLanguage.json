@@ -13,6 +13,17 @@
     },
     {
       "include": "#strings"
+    },
+    {
+      "name": "keyword.control.plang",
+      "begin": "label ",
+      "end": "\\n",
+      "patterns": [
+        {
+          "name": "invalid.deprecated",
+          "match": "\\b\\w+\\b"
+        }
+      ]
     }
   ],
   "repository": {
