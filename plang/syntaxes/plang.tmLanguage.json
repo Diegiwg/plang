@@ -16,7 +16,7 @@
     },
     {
       "name": "keyword.control.plang",
-      "begin": "label ",
+      "begin": "proc|label ",
       "end": "\\n",
       "patterns": [
         {
@@ -46,7 +46,7 @@
       "patterns": [
         {
           "name": "keyword.control.plang",
-          "match": "\\b(exit|pop|push|add|print|cast|dup)\\b"
+          "match": "\\b(call|exit|pop|push|add|print|cast|dup|return)\\b"
         }
       ]
     },
@@ -62,7 +62,7 @@
       "patterns": [
         {
           "name": "support.type.plang",
-          "match": "\\b(int|string)\\b"
+          "match": "\\b(void|int|string)\\b"
         }
       ]
     },
