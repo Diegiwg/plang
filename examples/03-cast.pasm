@@ -1,3 +1,4 @@
+label entry
 push 5
 push "5"
 cast int
