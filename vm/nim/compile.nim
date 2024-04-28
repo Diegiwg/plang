@@ -66,6 +66,18 @@ proc compile*(m: Machine, source: string) =
 
             m.program.instructions.add(instruction)
 
+        of Cmp:
+            if parts.len < 2 or parts[1].len == 0: m.log(lineCount, Log_Error, "COMPILE: Missing operand for `cmp` instruction")
+
+            case parts[1]:
+            of "eq": m.program.instructions.add(Instruction(loc: lineCount, kind: Cmp, cmp_kind: Cmp_Eq))
+            of "neq": m.program.instructions.add(Instruction(loc: lineCount, kind: Cmp, cmp_kind: Cmp_Neq))
+            of "lt": m.program.instructions.add(Instruction(loc: lineCount, kind: Cmp, cmp_kind: Cmp_Lt))
+            of "gt": m.program.instructions.add(Instruction(loc: lineCount, kind: Cmp, cmp_kind: Cmp_Gt))
+            of "lteq": m.program.instructions.add(Instruction(loc: lineCount, kind: Cmp, cmp_kind: Cmp_LtEq))
+            of "gteq": m.program.instructions.add(Instruction(loc: lineCount, kind: Cmp, cmp_kind: Cmp_GtEq))
+            else: m.log(lineCount, Log_Error, fmt"COMPILE: Unknown operand `{parts[1]}` for `cmp` instruction")
+
         of Cast:
             if parts.len < 2 or parts[1].len == 0: m.log(lineCount, Log_Error, "COMPILE: Missing operand for `cast` instruction")
             if parts[1].len < 0: m.log(lineCount, Log_Error, "COMPILE: Invalid operand for `cast` instruction")
@@ -75,15 +87,14 @@ proc compile*(m: Machine, source: string) =
 
             m.program.instructions.add(Instruction(loc: lineCount, kind: Cast, type_target: target))
 
-        of Dup:
-            if parts.len < 2 or parts[1].len == 0: m.log(lineCount, Log_Error, "COMPILE: Missing operand for `dup` instruction")
-            if parts[1].len < 0: m.log(lineCount, Log_Error, "COMPILE: Invalid operand for `dup` instruction") 
-            
-            var target: int
-            try: target = parseInt(parts[1])
-            except: m.log(lineCount, Log_Error, "COMPILE: Invalid operand for `dup` instruction")
-                
-            m.program.instructions.add(Instruction(loc: lineCount, kind: Dup, value_target: target))
+        of Dup, Pop, Swap:
+            if parts.len == 1: m.program.instructions.add(Instruction(loc: lineCount, kind: cmd, value_target: 0))
+            else:
+                try:
+                    let target = parseInt(parts[1])
+                    if target < 0: m.log(lineCount, Log_Error, fmt"COMPILE: Invalid operand for `{cmd}` instruction")
+                    m.program.instructions.add(Instruction(loc: lineCount, kind: cmd, value_target: target))
+                except: m.log(lineCount, Log_Error, fmt"COMPILE: Invalid operand for `{cmd}` instruction")
 
         of Label:
             let name = parts[1]
@@ -137,13 +148,15 @@ proc compile*(m: Machine, source: string) =
 
             m.program.instructions.add(Instruction(loc: lineCount, kind: Push, operand: value))
 
-        of Add, Sub, Mul, Div, Mod, Print, Pop:
+        of Add, Sub, Mul, Div, Mod, Print:
             m.program.instructions.add(Instruction(loc: lineCount, kind: cmd))
 
         of Exit:
             if parts.len < 2 or parts[1].len == 0: m.log(lineCount, Log_Error, "COMPILE: Missing operand for `exit` instruction")
             try: m.program.instructions.add(Instruction(loc: lineCount, kind: Exit, exit_code: parseInt(parts[1])))
             except: m.log(lineCount, Log_Error, "COMPILE: Invalid operand for `exit` instruction")
+
+        of Comment: discard
 
         of Unknown:
             m.log(lineCount, Log_Error, fmt("COMPILE: Unknown instruction `{cmd}` skipped"))

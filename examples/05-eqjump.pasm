@@ -2,6 +2,7 @@ label count
     push "Count: "
     dup 1
     cast string
+    pop
     add
     print
     jump f

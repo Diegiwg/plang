@@ -60,31 +60,103 @@ proc execute*(m: Machine) =
 
             m.ip = m.procedures_returns.pop
 
+        of Cmp:
+            if m.stack.len < 2: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Is expected 2 values on stack, got {m.stack}")
+
+            let b = m.stack.pop
+            let a = m.stack.pop
+
+            if a.kind != b.kind: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Incompatible types for `cmp` operation. Try to compare `{b.kind}` with `{a.kind}`")
+
+            case instruction.cmp_kind:
+            of Cmp_Eq:
+                case a.kind:
+                    of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparison is not allowed for `{VK_Void}`")
+                    of VK_Int: m.stack.add(Value(kind: VK_Int, i: if a.i == b.i: 1 else: 0))
+                    of VK_String: m.stack.add(Value(kind: VK_Int, i: if a.s == b.s: 1 else: 0))
+
+            of Cmp_Neq:
+                case a.kind:
+                    of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparison is not allowed for `{VK_Void}`")
+                    of VK_Int: m.stack.add(Value(kind: VK_Int, i: if a.i != b.i: 1 else: 0))
+                    of VK_String: m.stack.add(Value(kind: VK_Int, i: if a.s != b.s: 1 else: 0))
+            
+            of Cmp_Gt:
+                case a.kind:
+                    of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparison is not allowed for `{VK_Void}`")
+                    of VK_String: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparison is not allowed for `{VK_String}`")
+                    of VK_Int: m.stack.add(Value(kind: VK_Int, i: if a.i >= b.i: 1 else: 0))
+            
+            of Cmp_Lt:
+                case a.kind:
+                    of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparison is not allowed for `{VK_Void}`")
+                    of VK_String: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparison is not allowed for `{VK_String}`")
+                    of VK_Int: m.stack.add(Value(kind: VK_Int, i: if a.i < b.i: 1 else: 0))
+
+            of Cmp_GtEq:
+                case a.kind:
+                    of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparison is not allowed for `{VK_Void}`")
+                    of VK_String: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparison is not allowed for `{VK_String}`")
+                    of VK_Int: m.stack.add(Value(kind: VK_Int, i: if a.i >= b.i: 1 else: 0))
+            
+            of Cmp_LtEq:
+                case a.kind:
+                    of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparison is not allowed for `{VK_Void}`")
+                    of VK_String: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparison is not allowed for `{VK_String}`")
+                    of VK_Int: m.stack.add(Value(kind: VK_Int, i: if a.i <= b.i: 1 else: 0))
+
         of Cast:
             if m.stack.len == 0: m.log(instruction.loc, Log_Error, fmt"EXECUTE: No value on stack to cast")
 
             let value = m.stack.pop()
             case value.kind:
             of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Casting is not allowed for `{VK_Void}`")
+            
             of VK_Int:
                 case instruction.type_target:
                 of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Casting is not allowed for `{VK_Void}`")
-                of VK_Int: m.log(instruction.loc, Log_Warning, fmt"EXECUTE: Casting `{VK_Int}` to `{VK_Int}` does nothing")
-                of VK_String: m.stack.add(Value(kind: VK_String, s: $value.i))
+
+                of VK_Int:
+                    m.log(instruction.loc, Log_Warning, fmt"EXECUTE: Casting `{VK_Int}` to `{VK_Int}` does nothing")
+                    m.stack.add(Value(kind: VK_Int, i: value.i))
+                    m.stack.add(Value(kind: VK_Int, i: 0))
+
+                of VK_String:
+                    m.stack.add(Value(kind: VK_String, s: $value.i))
+                    m.stack.add(Value(kind: VK_Int, i: 1))
+            
             of VK_String:
                 case instruction.type_target:
                 of VK_Void: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Casting is not allowed for `{VK_Void}`")
-                of VK_String: m.log(instruction.loc, Log_Warning, fmt"EXECUTE: Casting `{VK_String}` to `{VK_String}` does nothing")
+
+                of VK_String:
+                    m.log(instruction.loc, Log_Warning, fmt"EXECUTE: Casting `{VK_String}` to `{VK_String}` does nothing")
+                    m.stack.add(Value(kind: VK_String, s: value.s))
+                    m.stack.add(Value(kind: VK_Int, i: 1))
+
                 of VK_Int:
-                    try: m.stack.add(Value(kind: VK_Int, i: parseInt(value.s)))
-                    except: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Casting `{VK_String}: {value.s}` to `{VK_Int}` failed")
+                    try:
+                        m.stack.add(Value(kind: VK_Int, i: parseInt(value.s)))
+                        m.stack.add(Value(kind: VK_Int, i: 1))
+
+                    except:
+                        m.log(instruction.loc, Log_Warning, fmt"EXECUTE: Casting `{VK_String}: {value.s}` to `{VK_Int}` failed")
+                        m.stack.add(Value(kind: VK_Int, i: 1))
 
         of Dup:
             let target = m.stack.len - instruction.value_target - 1
             if target < 0 or target >= m.stack.len: m.log(instruction.loc, Log_Error, "EXECUTE: Trying to duplicate value out of stack")
             m.stack.add(m.stack.get(target))
+        
+        of Swap:
+            let target = m.stack.len - instruction.value_target - 1
+            if target < 0 or target >= m.stack.len: m.log(instruction.loc, Log_Error, "EXECUTE: Trying to swap value out of stack")
+            
+            let a = m.stack.pop
+            m.stack.add(m.stack.get(target))
+            m.stack.sub(target, a)
 
-        of Label: discard
+        of Label, Comment: discard
 
         of Jump:
             if instruction.target != -1: 
@@ -181,8 +253,9 @@ proc execute*(m: Machine) =
             of VK_Int: echo value.i
 
         of Pop:
-            if m.stack.len == 0: m.log(instruction.loc, Log_Error, "EXECUTE: No value on stack to pop")
-            discard m.stack.pop
+            let target = m.stack.len - instruction.value_target - 1
+            if target < 0 or target >= m.stack.len: m.log(instruction.loc, Log_Error, "EXECUTE: Trying to poping value out of stack")
+            m.stack.del(target)
 
         of Push:
             m.stack.add(instruction.operand)

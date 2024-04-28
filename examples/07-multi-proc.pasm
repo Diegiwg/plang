@@ -10,6 +10,7 @@ proc sum
     > string
     add
     cast string
+    pop
     return
 
 proc calc
@@ -37,4 +38,3 @@ label entry
 
     pop
     pop
-    exit 0

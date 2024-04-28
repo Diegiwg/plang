@@ -4,6 +4,7 @@ label entry
     push 2
     add
     cast string
+    pop
     add
     print
 
@@ -12,6 +13,7 @@ label entry
     push 1
     sub
     cast string
+    pop
     add
     print
 
@@ -20,6 +22,7 @@ label entry
     push 2
     mul
     cast string
+    pop
     add
     print
 
@@ -28,6 +31,7 @@ label entry
     push 2
     div
     cast string
+    pop
     add
     print
 
@@ -36,5 +40,6 @@ label entry
     push 2
     mod
     cast string
+    pop
     add
     print

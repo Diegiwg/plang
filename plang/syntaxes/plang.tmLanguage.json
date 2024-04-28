@@ -12,6 +12,9 @@
       "include": "#types"
     },
     {
+      "include": "#comments"
+    },
+    {
       "include": "#strings"
     },
     {
@@ -23,7 +26,7 @@
       "patterns": [
         {
           "name": "keyword.control.plang",
-          "match": "\\b(proc|label|eqjump|neqjump|ltjump|gtjump|jump|call|exit|pop|push|add|sub|mul|div|mod|print|cast|dup|return)\\b"
+          "match": "\\b(proc|swap|cmp|label|eqjump|neqjump|ltjump|gtjump|jump|call|exit|pop|push|add|sub|mul|div|mod|print|cast|dup|return)\\b"
         }
       ]
     },
@@ -38,7 +41,7 @@
     "text": {
       "patterns": [
         {
-          "name": "comment.line.double-dash",
+          "name": "constant.regexp",
           "match": "\\b\\w+\\b"
         }
       ]
@@ -48,6 +51,15 @@
         {
           "name": "support.type.plang",
           "match": "\\b(void|int|string)\\b"
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.plang",
+          "begin": ";",
+          "end": "\n"
         }
       ]
     },

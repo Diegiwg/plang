@@ -27,9 +27,18 @@ proc `$`*(v: Value): string =
     of VK_Int: return fmt"{VK_Int}({v.i})"
 
 type
+    CpmKind* = enum
+        Cmp_Eq
+        Cmp_Neq
+        Cmp_Lt
+        Cmp_Gt
+        Cmp_LtEq
+        Cmp_GtEq
+
+type
     InstructionKind* = enum
-        Cast, 
-        Dup,
+        Comment, Cmp,
+        Dup, Swap, Cast,
         Pop, Push,
         Add, Sub, Mul, Div, Mod,
         Print,
@@ -39,9 +48,9 @@ type
 
 proc instructionKindFromString*(s: string): InstructionKind =
     case s:
-    of "cast": return Cast
-    
     of "dup": return Dup
+    of "swap": return Swap
+    of "cast": return Cast
     
     of "pop": return Pop
     of "push": return Push
@@ -68,6 +77,7 @@ proc instructionKindFromString*(s: string): InstructionKind =
     of ">": return ProcReturnArgs
 
     of "exit": return Exit
+    of ";": Comment
     else: return Unknown
 
 type
@@ -82,9 +92,11 @@ type
         of ProcArgs, ProcReturnArgs:
             args_count*: int
             args_types*: seq[ValueKind]
+        of Cmp:
+            cmp_kind*: CpmKind
         of Cast:
             type_target*: ValueKind
-        of Dup: 
+        of Dup, Pop, Swap: 
             value_target*: int
         of Push:
             operand*: Value
@@ -96,7 +108,7 @@ type
             target*: int
         of Exit:
             exit_code*: int
-        of Unknown, Pop, Print, Add, Sub, Mul, Div, Mod:
+        of Unknown, Print, Add, Sub, Mul, Div, Mod, Comment:
             discard
 
 type
@@ -118,6 +130,7 @@ proc add*(s: Stack, v: Value) = s.values.add(v)
 proc get*(s: Stack, i: int): Value = s.values[i]
 proc pop*(s: Stack): Value = s.values.pop
 proc del*(s: Stack, i: int) = s.values.delete(i)
+proc sub*(s: Stack, i: int, v: Value) = s.values[i] = v
 proc len*(s: Stack): int = s.values.len
 
 type
@@ -130,6 +143,7 @@ proc add*(s: ProcedureStack, v: Value) = s.stack.values.add(v)
 proc get*(s: ProcedureStack, i: int): Value = s.stack.values[i]
 proc pop*(s: ProcedureStack): Value = s.stack.values.pop
 proc del*(s: ProcedureStack, i: int) = s.stack.values.delete(i)
+proc sub*(s: ProcedureStack, i: int, v: Value) = s.stack.values[i] = v
 proc len*(s: ProcedureStack): int = s.stack.values.len
 
 type
