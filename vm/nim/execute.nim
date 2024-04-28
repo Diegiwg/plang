@@ -166,7 +166,7 @@ proc execute*(m: Machine) =
             let name = instruction.name_target
             if name == "" and name notin m.labels: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Label `{name}` not found")
 
-            m.ip = m.labels[name]
+            m.ip = (m.labels[name]) - 1
 
         of EqJump:
             let name = instruction.name_target
@@ -185,7 +185,7 @@ proc execute*(m: Machine) =
             of VK_String: goto = if a.s == b.s: true else: false
             
             m.stack.add(a)
-            if goto: m.ip = m.labels[name]
+            if goto: m.ip = (m.labels[name]) - 1
         
         of NeqJump:
             let name = instruction.name_target
@@ -204,7 +204,7 @@ proc execute*(m: Machine) =
             of VK_String: goto = if a.s != b.s: true else: false
             
             m.stack.add(a)
-            if goto: m.ip = m.labels[name]
+            if goto: m.ip = (m.labels[name]) - 1
 
         of GtJump:
             let name = instruction.name_target
@@ -223,7 +223,7 @@ proc execute*(m: Machine) =
             of VK_String: goto = if a.s > b.s: true else: false
             
             m.stack.add(a)
-            if goto: m.ip = m.labels[name]
+            if goto: m.ip = (m.labels[name]) - 1
 
         of LtJump:
             let name = instruction.name_target
@@ -242,7 +242,7 @@ proc execute*(m: Machine) =
             of VK_String: goto = if a.s < b.s: true else: false
             
             m.stack.add(a)
-            if goto: m.ip = m.labels[name]
+            if goto: m.ip = (m.labels[name]) - 1
                 
         of Print:
             if m.stack.len == 0: m.log(instruction.loc, Log_Error, "EXECUTE: No value on stack to print")
