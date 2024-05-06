@@ -105,6 +105,17 @@ proc execute*(m: Machine) =
                     of VK_String: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Comparison is not allowed for `{VK_String}`")
                     of VK_Int: m.stack.add(Value(kind: VK_Int, i: if a.i <= b.i: 1 else: 0))
 
+        of Stor:
+            if m.stack.len == 0: m.log(instruction.loc, Log_Error, fmt"EXECUTE: No value on stack to store")
+
+            let value = m.general_stack.pop()
+            m.variables[instruction.key] = value
+
+        of Load:
+            if instruction.key notin m.variables: m.log(instruction.loc, Log_Error, fmt"EXECUTE: Variable `{instruction.key}` not found")
+
+            m.general_stack.add(m.variables[instruction.key])
+
         of Cast:
             if m.stack.len == 0: m.log(instruction.loc, Log_Error, fmt"EXECUTE: No value on stack to cast")
 

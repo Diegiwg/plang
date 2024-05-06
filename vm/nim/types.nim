@@ -44,6 +44,7 @@ type
         Print,
         Label, Jump, EqJump, NeqJump, LtJump, GtJump,
         Call, Proc, ProcReturn, ProcArgs, ProcReturnArgs,
+        Stor, Load,
         Unknown, Exit,
 
 proc instructionKindFromString*(s: string): InstructionKind =
@@ -69,6 +70,9 @@ proc instructionKindFromString*(s: string): InstructionKind =
     of "neqjump": return NeqJump
     of "ltjump": return LtJump
     of "gtjump": return GtJump
+
+    of "stor": return Stor
+    of "load": return Load
     
     of "call": return Call
     of "proc": return Proc
@@ -106,6 +110,8 @@ type
         of Jump, EqJump, NeqJump, LtJump, GtJump:
             name_target*: string
             target*: int
+        of Stor, Load:
+            key*: string
         of Exit:
             exit_code*: int
         of Unknown, Print, Add, Sub, Mul, Div, Mod, Comment:
@@ -153,6 +159,7 @@ type
         
         procs*: Table[string, int] = initTable[string, int]()
         labels*: Table[string, int] = initTable[string, int]()
+        variables*: Table[string, Value] = initTable[string, Value]()
 
         general_stack*: Stack = Stack(name: "general")
         procedures_stack*: seq[ProcedureStack] = @[]
