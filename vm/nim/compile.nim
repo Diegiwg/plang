@@ -77,6 +77,14 @@ proc compile*(m: Machine, source: string) =
             of "lteq": m.program.instructions.add(Instruction(loc: lineCount, kind: Cmp, cmp_kind: Cmp_LtEq))
             of "gteq": m.program.instructions.add(Instruction(loc: lineCount, kind: Cmp, cmp_kind: Cmp_GtEq))
             else: m.log(lineCount, Log_Error, fmt"COMPILE: Unknown operand `{parts[1]}` for `cmp` instruction")
+        
+        of Stor:
+            if parts.len < 1: m.log(lineCount, Log_Error, "COMPILE: Missing operand for `stor` instruction")
+            m.program.instructions.add(Instruction(loc: lineCount, kind: Stor, key: parts[1]))
+
+        of Load:
+            if parts.len < 1: m.log(lineCount, Log_Error, "COMPILE: Missing operand for `load` instruction")
+            m.program.instructions.add(Instruction(loc: lineCount, kind: Load, key: parts[1]))
 
         of Cast:
             if parts.len < 2 or parts[1].len == 0: m.log(lineCount, Log_Error, "COMPILE: Missing operand for `cast` instruction")
